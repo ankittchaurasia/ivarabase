@@ -1,0 +1,45 @@
+/* Shared design tokens for the landing page and the docs (Starlight maps onto
+   these in theme.css). Neutral black/white with green as the accent. The theme
+   is <html data-theme="dark|light">, stored under Starlight's "starlight-theme"
+   key, so one switch covers the whole site. */
+:root,
+:root[data-theme='dark'] {
+	--ib-bg: #0a0a0a;
+	--ib-bg-2: #111111;
+	--ib-card: #121212;
+	--ib-card-2: #171717;
+	--ib-line: #232323;
+	--ib-line-2: #2e2e2e;
+	--ib-fg: #ededed;
+	--ib-fg-2: #a3a3a3;
+	--ib-fg-3: #6e6e6e;
+	--ib-accent: #3ecf8e;
+	--ib-accent-text: #3ecf8e;
+	--ib-accent-soft: rgba(62, 207, 142, 0.1);
+	--ib-accent-line: rgba(62, 207, 142, 0.28);
+	--ib-ink: #ededed; /* primary button */
+	--ib-ink-fg: #0a0a0a;
+	--ib-glow: rgba(62, 207, 142, 0.09);
+	--ib-shadow: 0 30px 80px -30px rgba(0, 0, 0, 0.9);
+	color-scheme: dark;
+}
+:root[data-theme='light'] {
+	--ib-bg: #ffffff;
+	--ib-bg-2: #fafafa;
+	--ib-card: #ffffff;
+	--ib-card-2: #fbfbfb;
+	--ib-line: #ebebeb;
+	--ib-line-2: #dedede;
+	--ib-fg: #0a0a0a;
+	--ib-fg-2: #525252;
+	--ib-fg-3: #8a8a8a;
+	--ib-accent: #24b47e;
+	--ib-accent-text: #15895c;
+	--ib-accent-soft: rgba(36, 180, 126, 0.09);
+	--ib-accent-line: rgba(36, 180, 126, 0.3);
+	--ib-ink: #0a0a0a;
+	--ib-ink-fg: #ffffff;
+	--ib-glow: rgba(36, 180, 126, 0.08);
+	--ib-shadow: 0 30px 70px -35px rgba(0, 0, 0, 0.28);
+	color-scheme: light;
+}

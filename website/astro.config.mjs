@@ -35,7 +35,7 @@ export default defineConfig({
 			editLink: { baseUrl: `${REPO}/edit/main/docs/` },
 			customCss: ['@fontsource-variable/inter', './src/styles/theme.css'],
 			sidebar,
-			routeMiddleware: './src/routeData.ts',
+			components: { Header: './src/components/DocsHeader.astro' },
 			lastUpdated: false,
 			credits: false,
 			expressiveCode: {
