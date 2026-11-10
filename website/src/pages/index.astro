@@ -1,0 +1,389 @@
+---
+// The landing page. Docs live under /docs/ (Starlight); this page has its own
+// layout so it can look like a product site rather than a docs index.
+import '@fontsource-variable/inter';
+import '../styles/landing.css';
+import { Code } from 'astro:components';
+import { REPO } from '../../docs.manifest.mjs';
+
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const img = (f: string) => `${base}docs-images/${f}`;
+const doc = (slug: string) => `${base}docs/${slug}/`;
+const site = Astro.site ? new URL(base, Astro.site).href : base;
+
+// Star count for the header button; the page still builds offline.
+let stars: number | null = null;
+try {
+	const r = await fetch('https://api.github.com/repos/ankittchaurasia/ivarabase', {
+		headers: { accept: 'application/vnd.github+json', 'user-agent': 'ivarabase-website' },
+		signal: AbortSignal.timeout(4000),
+	});
+	if (r.ok) stars = (await r.json()).stargazers_count ?? null;
+} catch {}
+const fmt = (n: number) => (n >= 1000 ? `${(n / 1000).toFixed(1)}k` : String(n));
+
+const title = 'IvaraBase — the backend your AI agents can run';
+const description =
+	'Self-hosted, Supabase-compatible backend for AI agents. Many projects on one server, each with Postgres, auth, storage, realtime, functions and encrypted backups. One container.';
+
+const compose = `services:
+  ivarabase:
+    image: ghcr.io/ankittchaurasia/ivarabase:0.2-pg18
+    restart: unless-stopped
+    environment:
+      IVARA_DOMAIN: base.example.com
+    ports: ["127.0.0.1:8787:8787"]
+    volumes: [ivarabase-data:/data]
+volumes:
+  ivarabase-data:`;
+
+const samples = [
+	{
+		id: 'query',
+		label: 'Query',
+		code: `import { createClient } from "@supabase/supabase-js";
+
+const supabase = createClient("https://shop.base.example.com", ANON_KEY);
+
+const { data: orders } = await supabase
+  .from("orders")
+  .select("id, status, order_items(qty, products(name))")
+  .eq("status", "paid")
+  .order("created_at", { ascending: false });`,
+	},
+	{
+		id: 'auth',
+		label: 'Auth',
+		code: `// email, phone, OAuth, any OpenID Connect provider, anonymous users
+await supabase.auth.signInWithOtp({ phone: "+15551234567" });
+await supabase.auth.signInWithOAuth({ provider: "keycloak" });
+
+// authenticator-app MFA; RLS can require (auth.jwt()->>'aal') = 'aal2'
+const { data } = await supabase.auth.mfa.enroll({ factorType: "totp" });`,
+	},
+	{
+		id: 'realtime',
+		label: 'Realtime',
+		code: `supabase
+  .channel("room-1")
+  .on("postgres_changes", { event: "INSERT", schema: "public", table: "messages" },
+      (payload) => render(payload.new))          // only rows RLS lets you see
+  .on("presence", { event: "sync" }, () => showOnline())
+  .subscribe();`,
+	},
+	{
+		id: 'storage',
+		label: 'Storage',
+		code: `await supabase.storage
+  .from("avatars")
+  .upload(\`\${user.id}/me.png\`, file, { upsert: true });
+
+const { data } = await supabase.storage
+  .from("invoices")
+  .createSignedUrl("2026/inv-0042.pdf", 3600);`,
+	},
+	{
+		id: 'vector',
+		label: 'Vectors',
+		code: `-- turn on pgvector from the Extensions page, then:
+create table documents (id bigserial primary key, body text, embedding vector(1536));
+create index on documents using hnsw (embedding vector_cosine_ops);
+
+select body from documents order by embedding <=> $1 limit 5;`,
+	},
+];
+
+const features = [
+	{ t: 'Postgres database', d: 'A real Postgres 18 database per project, with an SQL editor, table editor, tracked migrations and TypeScript types.', href: doc('database'), icon: 'db', big: true, shot: 'sql-editor-dark.png' },
+	{ t: 'Authentication', d: 'Email, magic links, phone codes, anonymous users, MFA, Google, GitHub, Apple and any OpenID Connect provider.', href: doc('auth'), icon: 'lock' },
+	{ t: 'Storage', d: 'Buckets protected by row level security, signed URLs and resumable uploads for large files.', href: doc('storage'), icon: 'folder' },
+	{ t: 'Realtime', d: 'Database changes, broadcast and presence over supabase.channel(), filtered by each user’s policies.', href: doc('realtime'), icon: 'pulse' },
+	{ t: 'Functions', d: 'TypeScript on Deno with Supabase’s Deno.serve style, secrets, cron schedules and logs.', href: doc('functions'), icon: 'bolt' },
+	{ t: 'Webhooks', d: 'Call a URL or a function on insert, update or delete, with retries and signed requests.', href: doc('webhooks'), icon: 'hook' },
+	{ t: 'Vectors', d: 'pgvector, PostGIS, pg_trgm and more, one click per project, plus a slow-queries view.', href: doc('database'), icon: 'spark' },
+	{ t: 'Backups', d: 'Encrypted bundles, tested by restoring them automatically, copied off-site to any S3 bucket.', href: doc('backups'), icon: 'shield', wide: true },
+];
+
+const rows = [
+	['Run by AI agents, with approvals', 'yes', 'part', 'no', 'part'],
+	['Many projects on one server', 'yes', 'no', 'no', 'cloud'],
+	['Self-host with one container', 'yes', 'part', 'yes', 'no'],
+	['Postgres + supabase-js', 'yes', 'yes', 'no', 'no'],
+	['Encrypted, restore-tested backups', 'yes', 'part', 'part', 'cloud'],
+];
+const mark: Record<string, string> = { yes: '✓', no: '–', part: '◐', cloud: '☁' };
+---
+
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{title}</title>
+		<meta name="description" content={description} />
+		<link rel="canonical" href={site} />
+		<link rel="icon" href={`${base}favicon.svg`} type="image/svg+xml" />
+		<meta name="theme-color" content="#0b0f0d" />
+		<meta property="og:type" content="website" />
+		<meta property="og:title" content={title} />
+		<meta property="og:description" content={description} />
+		<meta property="og:url" content={site} />
+		<meta property="og:image" content={new URL(img('social-preview.png'), Astro.site ?? 'http://localhost').href} />
+		<meta name="twitter:card" content="summary_large_image" />
+	</head>
+	<body>
+		<header class="nav">
+			<div class="wrap nav-inner">
+				<a href={base} class="brand" aria-label="IvaraBase home">
+					<img src={`${base}favicon.svg`} alt="" width="28" height="28" />
+					<span>IvaraBase</span>
+				</a>
+				<nav class="nav-links" aria-label="Main">
+					<a href="#features">Product</a>
+					<a href="#agents">Agents</a>
+					<a href={doc('docker')}>Docs</a>
+					<a href={doc('comparison')}>Compare</a>
+					<a href={`${REPO}/releases`}>Changelog</a>
+				</nav>
+				<div class="nav-cta">
+					<a class="gh" href={REPO} aria-label="Star IvaraBase on GitHub">
+						<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+						<span>Star</span>
+						{stars !== null && <b>{fmt(stars)}</b>}
+					</a>
+					<a class="btn btn-primary btn-sm" href={doc('docker')}>Get started</a>
+				</div>
+			</div>
+		</header>
+
+		<main>
+			<!-- hero -->
+			<section class="hero">
+				<div class="glow" aria-hidden="true"></div>
+				<div class="wrap hero-inner">
+					<a class="pill" href={`${REPO}/releases/tag/v0.2.0`}>
+						<span class="pill-tag">v0.2</span> Realtime, MFA, webhooks and a Docker image <span aria-hidden="true">→</span>
+					</a>
+					<h1>
+						Build on Postgres.<br />
+						<span class="grad">Let your agents run it.</span>
+					</h1>
+					<p class="lead">
+						IvaraBase is a self-hosted, Supabase-compatible backend. One server holds all your projects, each with its own
+						database, auth, storage, realtime, functions and backups. Claude Code, Codex or ChatGPT build on it over MCP,
+						and anything risky waits for your approval.
+					</p>
+					<div class="actions">
+						<a class="btn btn-primary" href={doc('docker')}>Start in 2 minutes</a>
+						<a class="btn btn-ghost" href={REPO}>
+							<svg viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 .25a.75.75 0 01.673.418l1.882 3.815 4.21.612a.75.75 0 01.416 1.279l-3.046 2.97.719 4.192a.75.75 0 01-1.088.791L8 12.347l-3.766 1.98a.75.75 0 01-1.088-.79l.72-4.194L.818 6.374a.75.75 0 01.416-1.28l4.21-.611L7.327.668A.75.75 0 018 .25z"/></svg>
+							Star on GitHub
+						</a>
+					</div>
+					<p class="works">
+						Works with <span>Claude Code</span><span>Codex</span><span>ChatGPT</span><span>Cursor</span><span>supabase-js</span><span>Docker</span>
+					</p>
+				</div>
+				<div class="wrap">
+					<figure class="frame">
+						<img src={img('dashboard-dark.png')} alt="The IvaraBase dashboard with health checks, projects and pending agent approvals" width="2880" height="1800" />
+					</figure>
+				</div>
+			</section>
+
+			<!-- stats -->
+			<section class="wrap" aria-label="At a glance">
+				<div class="stats">
+					<div><b>~0 MB</b><span>per idle project</span></div>
+					<div><b>1</b><span>container to run it all</span></div>
+					<div><b>100+</b><span>operations, all over MCP</span></div>
+					<div><b>300</b><span>end-to-end checks per release</span></div>
+				</div>
+			</section>
+
+			<!-- features -->
+			<section id="features" class="section wrap">
+				<p class="eyebrow">Everything a project needs</p>
+				<h2>A complete backend, per project</h2>
+				<p class="sub">The same building blocks you know from Supabase, behind the same APIs, on a server you own.</p>
+				<div class="bento">
+					{features.map((f) => (
+						<a href={f.href} class:list={['card', { big: f.big, wide: f.wide }]}>
+							<span class:list={['icon', `i-${f.icon}`]} aria-hidden="true"></span>
+							<h3>{f.t}</h3>
+							<p>{f.d}</p>
+							{f.shot && <img class="card-shot" src={img(f.shot)} alt="" loading="lazy" />}
+							<span class="more">Learn more →</span>
+						</a>
+					))}
+				</div>
+			</section>
+
+			<!-- agents -->
+			<section id="agents" class="section wrap split">
+				<div>
+					<p class="eyebrow">Built for AI agents</p>
+					<h2>Agents build. You approve.</h2>
+					<p class="sub">
+						Every button in the dashboard is an operation, and every operation is an MCP tool. Your agent can create a project,
+						write migrations, turn on auth and deploy functions, without a single UI-only step.
+					</p>
+					<ul class="checks">
+						<li><b>Scoped tokens.</b> Read, write or admin; per project; with an expiry.</li>
+						<li><b>Previews first.</b> Destructive calls show what would happen before anything runs.</li>
+						<li><b>Approvals.</b> Dropping a table or replacing data becomes a request you accept from your phone.</li>
+						<li><b>Audit log.</b> Every change, with the agent that made it.</li>
+					</ul>
+					<Code lang="sh" theme="github-dark-default" code={`claude mcp add --transport http ivarabase \\
+  https://base.example.com/mcp \\
+  --header "Authorization: Bearer ivb_..."`} />
+					<p class="small">Also Codex, ChatGPT, Cursor, VS Code and Claude Desktop. <a href={doc('agents')}>Connect your agent →</a></p>
+				</div>
+				<figure class="phone">
+					<img src={img('approvals-mobile-dark.png')} alt="Approving an agent's request on a phone" loading="lazy" />
+				</figure>
+			</section>
+
+			<!-- code -->
+			<section class="section wrap">
+				<p class="eyebrow">Supabase-compatible</p>
+				<h2>Keep your client code</h2>
+				<p class="sub">supabase-js and the Supabase SDKs work unchanged. Point them at a project URL and go.</p>
+				<div class="tabs" role="tablist">
+					{samples.map((s, i) => (
+						<button role="tab" type="button" data-tab={s.id} aria-selected={i === 0 ? 'true' : 'false'}>{s.label}</button>
+					))}
+				</div>
+				<div class="panes">
+					{samples.map((s, i) => (
+						<div class="pane" data-pane={s.id} hidden={i !== 0}>
+							<Code lang={s.id === 'vector' ? 'sql' : 'ts'} theme="github-dark-default" code={s.code} />
+						</div>
+					))}
+				</div>
+			</section>
+
+			<!-- many projects -->
+			<section class="section wrap split reverse">
+				<figure class="diagram">
+					<img src={img('architecture.svg')} alt="Agents, apps and you talk to one IvaraBase server, which runs every project in one Postgres cluster" loading="lazy" />
+				</figure>
+				<div>
+					<p class="eyebrow">One server, every project</p>
+					<h2>Your tenth project costs nothing extra</h2>
+					<p class="sub">
+						A project is a database, a few roles and some metadata in one Postgres cluster. REST and function processes start on
+						the first request and stop when idle, so client work, side projects and staging copies share the server you already pay for.
+					</p>
+					<ul class="checks">
+						<li>Postgres tuning follows the memory you give it, container limits included.</li>
+						<li>Monitoring and alerts to a webhook, Discord or email.</li>
+						<li>Automatic HTTPS, or sits behind nginx, Caddy or Traefik.</li>
+					</ul>
+				</div>
+			</section>
+
+			<!-- compare -->
+			<section class="section wrap">
+				<p class="eyebrow">Compare</p>
+				<h2>Where IvaraBase fits</h2>
+				<div class="table-wrap">
+					<table class="compare">
+						<thead>
+							<tr><th></th><th class="us">IvaraBase</th><th>Supabase<small>self-hosted</small></th><th>PocketBase</th><th>Firebase</th></tr>
+						</thead>
+						<tbody>
+							{rows.map((r) => (
+								<tr>
+									<td>{r[0]}</td>
+									{r.slice(1).map((v, i) => <td class:list={[`m-${v}`, { us: i === 0 }]}>{mark[v]}</td>)}
+								</tr>
+							))}
+						</tbody>
+					</table>
+				</div>
+				<p class="small center">✓ yes · ◐ partly · ☁ cloud only · – no. <a href={doc('comparison')}>Full comparison, including where the others win →</a></p>
+			</section>
+
+			<!-- quick start -->
+			<section class="section wrap split">
+				<div>
+					<p class="eyebrow">Self-host in minutes</p>
+					<h2>One container. Your server.</h2>
+					<p class="sub">IvaraBase, Postgres 18, PostgREST and Deno in one image for amd64 and arm64. Put it behind the proxy you already run.</p>
+					<div class="actions left">
+						<a class="btn btn-primary" href={doc('docker')}>Install with Docker</a>
+						<a class="btn btn-ghost" href={doc('deploy')}>Without Docker</a>
+					</div>
+				</div>
+				<div class="term">
+					<Code lang="yaml" theme="github-dark-default" code={compose} />
+					<Code lang="sh" theme="github-dark-default" code={`docker compose up -d`} />
+				</div>
+			</section>
+
+			<!-- cta -->
+			<section class="cta">
+				<div class="glow" aria-hidden="true"></div>
+				<div class="wrap">
+					<h2>Give your agents a real backend</h2>
+					<p class="sub">Open source under AGPL-3.0. Free to self-host, commercially too.</p>
+					<div class="actions">
+						<a class="btn btn-primary" href={doc('docker')}>Get started</a>
+						<a class="btn btn-ghost" href={REPO}>View on GitHub</a>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<footer class="footer">
+			<div class="wrap foot-grid">
+				<div class="foot-brand">
+					<a href={base} class="brand"><img src={`${base}favicon.svg`} alt="" width="24" height="24" /><span>IvaraBase</span></a>
+					<p>The self-hosted, Supabase-compatible backend your AI agents can run.</p>
+				</div>
+				<div>
+					<h4>Product</h4>
+					<a href={doc('docker')}>Get started</a>
+					<a href={doc('agents')}>AI agents & MCP</a>
+					<a href={doc('comparison')}>Comparison</a>
+					<a href={doc('roadmap')}>Roadmap</a>
+				</div>
+				<div>
+					<h4>Docs</h4>
+					<a href={doc('database')}>Database</a>
+					<a href={doc('auth')}>Auth</a>
+					<a href={doc('realtime')}>Realtime</a>
+					<a href={doc('backups')}>Backups</a>
+				</div>
+				<div>
+					<h4>Community</h4>
+					<a href={REPO}>GitHub</a>
+					<a href={`${REPO}/discussions`}>Discussions</a>
+					<a href={`${REPO}/issues`}>Issues</a>
+					<a href={`${REPO}/releases`}>Releases</a>
+				</div>
+				<div>
+					<h4>Legal</h4>
+					<a href={`${REPO}/blob/main/LICENSE`}>License (AGPL-3.0)</a>
+					<a href={`${REPO}/blob/main/LICENSING.md`}>Commercial license</a>
+					<a href={`${REPO}/blob/main/SECURITY.md`}>Security</a>
+				</div>
+			</div>
+			<div class="wrap foot-bottom">
+				<span>© {new Date().getFullYear()} IvaraBase contributors</span>
+				<span>Not affiliated with Supabase, PocketBase or Google.</span>
+			</div>
+		</footer>
+
+		<script>
+			const tabs = document.querySelectorAll<HTMLButtonElement>('[data-tab]');
+			tabs.forEach((t) =>
+				t.addEventListener('click', () => {
+					tabs.forEach((x) => x.setAttribute('aria-selected', String(x === t)));
+					document.querySelectorAll<HTMLElement>('[data-pane]').forEach((p) => (p.hidden = p.dataset.pane !== t.dataset.tab));
+				}),
+			);
+		</script>
+	</body>
+</html>

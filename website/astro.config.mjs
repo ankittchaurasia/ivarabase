@@ -5,9 +5,9 @@ import { defineConfig } from 'astro/config';
 import starlight from '@astrojs/starlight';
 import { REPO, SECTIONS, normalizeBase, slugFor } from './docs.manifest.mjs';
 
-// The final domain isn't decided yet, so both come from the environment:
+// Deployed at https://base.ivara.io; SITE and BASE can still be overridden:
 //   SITE=https://docs.example.com BASE=/ npm run build
-const SITE = process.env.SITE || 'https://ivarabase.dev';
+const SITE = process.env.SITE || 'https://base.ivara.io';
 const BASE = normalizeBase(process.env.BASE);
 
 const docsDir = fileURLToPath(new URL('../docs/', import.meta.url));

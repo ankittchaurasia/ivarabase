@@ -32,7 +32,7 @@ The final domain isn't decided yet, so the site URL and base path come from envi
 
 | Variable | Default | For |
 |---|---|---|
-| `SITE` | `https://ivarabase.dev` | the full origin, used for canonical URLs and the sitemap |
+| `SITE` | `https://base.ivara.io` | the full origin, used for canonical URLs and the sitemap |
 | `BASE` | `/` | the path the site is served under, e.g. `/ivarabase/` for `https://user.github.io/ivarabase/` |
 
 ```sh
@@ -45,6 +45,7 @@ SITE=https://example.github.io BASE=/ivarabase/ npm run build
 `dist/` is self-contained static HTML, CSS and JS (search runs in the browser with Pagefind). There are no analytics or tracking scripts.
 
 - **Any static host:** upload the contents of `website/dist/`.
+- **Vercel** (used for base.ivara.io): import the repo, set **Root Directory** to `website` and keep "Include files outside the root directory" on (the build reads `../docs`). `vercel.json` sets the build and output. Then add the domain under Settings → Domains.
 - **Cloudflare Pages:** root directory `website`, build command `npm ci && npm run build`, output directory `dist`. Set `SITE` (and `BASE` if needed) as environment variables.
 - **Netlify:** base directory `website`, build command `npm run build`, publish directory `website/dist`.
 - **Vercel:** root directory `website`, framework preset Astro (or "Other" with build command `npm run build` and output directory `dist`).
