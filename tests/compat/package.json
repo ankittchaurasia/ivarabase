@@ -1,0 +1,11 @@
+{
+  "name": "ivarabase-compat",
+  "private": true,
+  "type": "module",
+  "description": "Runs the real supabase-js client against an IvaraBase project. Use: make compat",
+  "dependencies": {
+    "@supabase/supabase-js": "2.46.1",
+    "jsqr": "1.4.0",
+    "tus-js-client": "4.3.1"
+  }
+}

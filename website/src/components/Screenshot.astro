@@ -1,0 +1,41 @@
+---
+// Shows the dashboard screenshot from docs/images/ (synced to public/docs-images/)
+// when it exists, the dark or light one to match the site's theme. Renders
+// nothing when there's no screenshot, so the build never depends on it.
+import fs from 'node:fs';
+import path from 'node:path';
+import { IMAGES_DIR } from '../../docs.manifest.mjs';
+
+interface Props {
+	name?: string;
+	alt?: string;
+}
+const { name = 'dashboard', alt = 'The IvaraBase dashboard' } = Astro.props;
+
+const dir = path.join(process.cwd(), 'public', IMAGES_DIR);
+const find = (variant: string) =>
+	['png', 'webp', 'jpg', 'jpeg', 'avif']
+		.map((ext) => `${name}${variant}.${ext}`)
+		.find((f) => fs.existsSync(path.join(dir, f)));
+
+const dark = find('-dark');
+const light = find('-light') ?? find('');
+const url = (f: string) => `${import.meta.env.BASE_URL.replace(/\/?$/, '/')}${IMAGES_DIR}/${f}`;
+---
+
+{
+	(dark || light) && (
+		<figure class="ib-shot not-content">
+			{dark && <img class="ib-dark" src={url(dark)} alt={alt} loading="lazy" decoding="async" />}
+			{light && (
+				<img
+					class:list={['ib-light', { 'ib-has-dark': !!dark }]}
+					src={url(light)}
+					alt={alt}
+					loading="lazy"
+					decoding="async"
+				/>
+			)}
+		</figure>
+	)
+}

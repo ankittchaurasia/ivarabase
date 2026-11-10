@@ -1,0 +1,23 @@
+# Test project for the supabase-js compatibility suite (make compat).
+project: compat_test
+name: supabase-js compatibility
+migrations: migrations
+functions_dir: functions
+functions:
+  webhook:
+    verify_jwt: false
+secrets:
+  GREETING: namaste
+auth:
+  site_url: http://localhost:3000
+  redirect_urls:
+    - http://localhost:3000/*
+  confirm_email: false
+storage:
+  buckets:
+    avatars:
+      public: true
+      file_size_limit: 1MB
+      allowed_mime_types: [image/*]
+    docs:
+      public: false

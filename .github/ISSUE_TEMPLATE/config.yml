@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/ankittchaurasia/ivarabase/discussions
+    about: Ask questions, share what you built, or discuss ideas.
+  - name: Report a security vulnerability
+    url: https://github.com/ankittchaurasia/ivarabase/security/advisories/new
+    about: Please report security problems privately.
+  - name: Commercial license
+    url: https://github.com/ankittchaurasia/ivarabase/discussions/new?category=general
+    about: Use IvaraBase without the AGPL terms.

@@ -1,0 +1,31 @@
+# Dokploy: Create Service > Compose, paste this file and set IVARABASE_DOMAIN
+# under Environment. Dokploy's Traefik ends HTTPS. For project subdomains add a
+# wildcard certificate (Traefik DNS challenge) - see docs/DOCKER.md.
+services:
+  ivarabase:
+    image: ghcr.io/ankittchaurasia/ivarabase:0.2-pg18
+    restart: unless-stopped
+    environment:
+      - IVARA_DOMAIN=${IVARABASE_DOMAIN}
+      - IVARA_ADMIN_PASSWORD=${IVARABASE_ADMIN_PASSWORD}
+    volumes:
+      - ivarabase-data:/data
+    shm_size: 256mb
+    stop_grace_period: 60s
+    networks:
+      - dokploy-network
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=dokploy-network
+      - traefik.http.routers.ivarabase.rule=Host(`${IVARABASE_DOMAIN}`) || HostRegexp(`^[a-z0-9_-]+\.${IVARABASE_DOMAIN}$`)
+      - traefik.http.routers.ivarabase.entrypoints=websecure
+      - traefik.http.routers.ivarabase.tls=true
+      - traefik.http.routers.ivarabase.tls.certresolver=letsencrypt
+      - traefik.http.routers.ivarabase.tls.domains[0].main=${IVARABASE_DOMAIN}
+      - traefik.http.routers.ivarabase.tls.domains[0].sans=*.${IVARABASE_DOMAIN}
+      - traefik.http.services.ivarabase.loadbalancer.server.port=8787
+volumes:
+  ivarabase-data:
+networks:
+  dokploy-network:
+    external: true

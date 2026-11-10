@@ -1,0 +1,14 @@
+bin/
+node_modules/
+.DS_Store
+.dev-data/
+scripts/dev.local.env
+*.local.env
+.claude/
+
+# Docs website: dependencies, build output, and the files synced from docs/
+website/node_modules/
+website/dist/
+website/.astro/
+website/src/content/docs/docs/
+website/public/docs-images/

@@ -1,0 +1,23 @@
+---
+// A link to a synced doc page that falls back to another page (or the docs on
+// GitHub) while the target file doesn't exist yet.
+//   <DocLink file="COMPARISON.md" fallback="SUPABASE.md">compare</DocLink>
+import fs from 'node:fs';
+import path from 'node:path';
+import { REPO, slugFor } from '../../docs.manifest.mjs';
+
+interface Props {
+	file: string;
+	fallback?: string;
+	class?: string;
+}
+const { file, fallback, class: className } = Astro.props;
+
+const docsDir = path.join(process.cwd(), '..', 'docs');
+const exists = (f: string) => fs.existsSync(path.join(docsDir, f));
+const target = exists(file) ? file : fallback && exists(fallback) ? fallback : null;
+const base = import.meta.env.BASE_URL.replace(/\/?$/, '/');
+const href = target ? `${base}${slugFor(target)}/` : `${REPO}/tree/main/docs`;
+---
+
+<a href={href} class={className}><slot /></a>

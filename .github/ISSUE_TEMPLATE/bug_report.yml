@@ -1,0 +1,47 @@
+name: Bug report
+description: Something doesn't work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for reporting! For security problems, please use [private reporting](https://github.com/ankittchaurasia/ivarabase/security/advisories/new) instead.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Create a project…
+        2. Call …
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: Output of `ivarabase version` (or the image tag)
+      placeholder: 0.2.0
+    validations:
+      required: true
+  - type: dropdown
+    id: install
+    attributes:
+      label: How is it installed?
+      options:
+        - Docker
+        - Native (Linux)
+        - Native (macOS)
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs and health
+      description: Relevant log lines, and the output of `ivarabase doctor` or the dashboard's health checks. Remove tokens and passwords.
+      render: text

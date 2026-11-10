@@ -1,0 +1,9 @@
+.git
+bin
+.dev-data
+**/node_modules
+web/ui
+tests
+deploy
+*.local.env
+.DS_Store

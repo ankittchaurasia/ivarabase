@@ -1,0 +1,27 @@
+{
+  "name": "ivarabase-website",
+  "private": true,
+  "type": "module",
+  "version": "0.0.0",
+  "description": "Documentation website for IvaraBase",
+  "license": "AGPL-3.0-only",
+  "scripts": {
+    "sync": "node scripts/sync-docs.mjs",
+    "predev": "npm run sync",
+    "dev": "astro dev",
+    "prebuild": "npm run sync",
+    "build": "astro build",
+    "preview": "astro preview",
+    "astro": "astro"
+  },
+  "dependencies": {
+    "@astrojs/markdown-remark": "7.3.4",
+    "@astrojs/starlight": "0.42.6",
+    "@fontsource-variable/inter": "5.2.8",
+    "astro": "7.4.2",
+    "sharp": "0.35.5"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 520" width="960" height="520" font-family="Inter, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+  <title>IvaraBase architecture</title>
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#7a8a84"/>
+    </marker>
+  </defs>
+  <rect width="960" height="520" rx="18" fill="#141816"/>
+
+  <!-- clients -->
+  <g font-size="14" fill="#e9efec">
+    <text x="40" y="52" font-size="12" letter-spacing="2" fill="#7a8a84">CLIENTS</text>
+    <rect x="40" y="70" width="200" height="56" rx="10" fill="#1d2320" stroke="#2c3531"/>
+    <text x="58" y="96" font-weight="600">AI agents</text>
+    <text x="58" y="114" font-size="12" fill="#9aa8a2">Claude Code, Codex, ChatGPT</text>
+    <rect x="40" y="140" width="200" height="56" rx="10" fill="#1d2320" stroke="#2c3531"/>
+    <text x="58" y="166" font-weight="600">Your apps</text>
+    <text x="58" y="184" font-size="12" fill="#9aa8a2">supabase-js, Swift, Flutter</text>
+    <rect x="40" y="210" width="200" height="56" rx="10" fill="#1d2320" stroke="#2c3531"/>
+    <text x="58" y="236" font-weight="600">You</text>
+    <text x="58" y="254" font-size="12" fill="#9aa8a2">web UI (phone too), CLI</text>
+  </g>
+
+  <!-- server -->
+  <rect x="290" y="40" width="630" height="300" rx="14" fill="#18201c" stroke="#2f8f6b" stroke-width="1.5"/>
+  <text x="310" y="68" font-size="12" letter-spacing="2" fill="#3fcf8e">IVARABASE · ONE GO BINARY OR ONE CONTAINER</text>
+
+  <g font-size="13" fill="#e9efec">
+    <rect x="310" y="84" width="270" height="110" rx="10" fill="#1f2a25" stroke="#2c3531"/>
+    <text x="326" y="108" font-weight="600">Operation registry</text>
+    <text x="326" y="130" font-size="12" fill="#9aa8a2">one definition per action →</text>
+    <text x="326" y="148" font-size="12" fill="#9aa8a2">MCP · REST · OpenAPI · CLI · UI</text>
+    <text x="326" y="172" font-size="12" fill="#9aa8a2">scoped tokens · previews · approvals · audit</text>
+
+    <rect x="600" y="84" width="300" height="110" rx="10" fill="#1f2a25" stroke="#2c3531"/>
+    <text x="616" y="108" font-weight="600">Project APIs (Supabase-compatible)</text>
+    <text x="616" y="130" font-size="12" fill="#9aa8a2">/rest/v1 · /auth/v1 · /storage/v1</text>
+    <text x="616" y="148" font-size="12" fill="#9aa8a2">/realtime/v1 · /functions/v1</text>
+    <text x="616" y="172" font-size="12" fill="#9aa8a2">PostgREST per project, Deno functions</text>
+
+    <rect x="310" y="210" width="180" height="110" rx="10" fill="#1f2a25" stroke="#2c3531"/>
+    <text x="326" y="234" font-weight="600">Backups</text>
+    <text x="326" y="256" font-size="12" fill="#9aa8a2">encrypted .ivbak</text>
+    <text x="326" y="274" font-size="12" fill="#9aa8a2">restore-tested</text>
+    <text x="326" y="292" font-size="12" fill="#9aa8a2">local + S3 off-site</text>
+
+    <rect x="505" y="210" width="190" height="110" rx="10" fill="#1f2a25" stroke="#2c3531"/>
+    <text x="521" y="234" font-weight="600">Webhooks · Realtime</text>
+    <text x="521" y="256" font-size="12" fill="#9aa8a2">row triggers → queue</text>
+    <text x="521" y="274" font-size="12" fill="#9aa8a2">RLS-checked delivery</text>
+    <text x="521" y="292" font-size="12" fill="#9aa8a2">retries, signatures</text>
+
+    <rect x="710" y="210" width="190" height="110" rx="10" fill="#1f2a25" stroke="#2c3531"/>
+    <text x="726" y="234" font-weight="600">Operations</text>
+    <text x="726" y="256" font-size="12" fill="#9aa8a2">monitoring · alerts</text>
+    <text x="726" y="274" font-size="12" fill="#9aa8a2">HTTPS or proxy mode</text>
+    <text x="726" y="292" font-size="12" fill="#9aa8a2">Postgres tuning</text>
+  </g>
+
+  <!-- postgres -->
+  <rect x="290" y="380" width="630" height="104" rx="14" fill="#16202a" stroke="#3b6ea5" stroke-width="1.5"/>
+  <text x="310" y="408" font-size="12" letter-spacing="2" fill="#7fb2e5">POSTGRESQL 18 · ONE CLUSTER</text>
+  <g font-size="13" fill="#e9efec">
+    <rect x="310" y="420" width="140" height="48" rx="8" fill="#1c2833" stroke="#2c3a47"/>
+    <text x="326" y="449" font-weight="600">shop</text>
+    <rect x="465" y="420" width="140" height="48" rx="8" fill="#1c2833" stroke="#2c3a47"/>
+    <text x="481" y="449" font-weight="600">blog</text>
+    <rect x="620" y="420" width="140" height="48" rx="8" fill="#1c2833" stroke="#2c3a47"/>
+    <text x="636" y="449" font-weight="600">crm</text>
+    <rect x="775" y="420" width="125" height="48" rx="8" fill="none" stroke="#2c3a47" stroke-dasharray="5 4"/>
+    <text x="791" y="441" fill="#9aa8a2">+ more</text>
+    <text x="791" y="458" font-size="11" fill="#7a8a84">~0 MB when idle</text>
+  </g>
+  <text x="40" y="440" font-size="12" fill="#9aa8a2">each project:</text>
+  <text x="40" y="458" font-size="12" fill="#9aa8a2">own database, roles,</text>
+  <text x="40" y="476" font-size="12" fill="#9aa8a2">auth, storage, keys</text>
+
+  <!-- arrows -->
+  <g stroke="#7a8a84" stroke-width="1.5" fill="none" marker-end="url(#arrow)">
+    <path d="M242 98 L306 128"/>
+    <path d="M242 170 C 300 203, 560 203, 640 198"/>
+    <path d="M242 238 L306 160"/>
+    <path d="M605 342 L605 376"/>
+  </g>
+</svg>

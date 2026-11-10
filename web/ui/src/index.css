@@ -1,0 +1,120 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Warm editorial palette: cream canvas, deep green primary. Dark mode is a warm
+   charcoal, never blue. Values are HSL triplets for Tailwind's alpha syntax. */
+@layer base {
+  :root {
+    --background: 40 33% 96%;
+    --foreground: 30 12% 12%;
+    --card: 40 40% 99.3%;
+    --sidebar: 40 30% 93.5%;
+    --muted: 40 24% 91%;
+    --muted-foreground: 30 8% 40%;
+    --border: 38 20% 85%;
+    --input: 38 18% 81%;
+    --primary: 160 58% 29%;
+    --primary-foreground: 40 40% 98%;
+    --accent: 40 28% 89%;
+    --destructive: 0 68% 44%;
+    --warning: 33 85% 38%;
+    --success: 150 55% 30%;
+    --info: 208 58% 40%;
+
+    --syn-keyword: 330 55% 42%;
+    --syn-string: 150 50% 30%;
+    --syn-number: 25 80% 40%;
+    --syn-comment: 35 10% 55%;
+    --syn-fn: 208 58% 40%;
+    --syn-type: 270 40% 48%;
+    --syn-prop: 30 30% 30%;
+    /* chart series (validated palette slots 1-4, light surface) */
+    --series-1: #2a78d6;
+    --series-2: #eb6834;
+    --series-3: #1baf7a;
+    --series-4: #eda100;
+    color-scheme: light;
+  }
+  .dark {
+    --background: 30 7% 7.5%;
+    --foreground: 40 20% 91%;
+    --card: 30 6% 10%;
+    --sidebar: 30 6% 9%;
+    --muted: 30 5% 14.5%;
+    --muted-foreground: 35 8% 61%;
+    --border: 30 5% 18.5%;
+    --input: 30 5% 23%;
+    --primary: 155 52% 47%;
+    --primary-foreground: 160 60% 7%;
+    --accent: 30 5% 15.5%;
+    --destructive: 0 72% 62%;
+    --warning: 38 88% 58%;
+    --success: 148 50% 52%;
+    --info: 208 75% 68%;
+
+    --syn-keyword: 330 70% 72%;
+    --syn-string: 145 45% 62%;
+    --syn-number: 30 85% 65%;
+    --syn-comment: 35 8% 45%;
+    --syn-fn: 208 75% 70%;
+    --syn-type: 270 60% 75%;
+    --syn-prop: 40 25% 80%;
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    color-scheme: dark;
+  }
+
+  * { @apply border-border; }
+  html, body, #root { height: 100%; }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 14px;
+    font-feature-settings: "cv11", "ss01";
+    -webkit-text-size-adjust: 100%;
+  }
+  ::selection { background: hsl(var(--primary) / 0.22); }
+  input, select, textarea, button { font: inherit; }
+  code, pre, kbd { @apply font-mono; font-size: 0.86em; }
+}
+
+@layer components {
+  .label { @apply font-mono text-[10.5px] uppercase tracking-[0.13em] text-muted-foreground; }
+  .scroll-thin { scrollbar-width: thin; scrollbar-color: hsl(var(--border)) transparent; }
+  .focus-ring { @apply outline-none focus-visible:ring-2 focus-visible:ring-ring/40 focus-visible:ring-offset-0; }
+  .field-input {
+    @apply w-full rounded-md border border-input bg-card px-3 py-[7px] text-[13.5px] text-foreground placeholder:text-muted-foreground/70
+      outline-none transition focus:border-primary/70 focus:ring-[3px] focus:ring-primary/15 disabled:opacity-60;
+  }
+  @media (max-width: 640px) { .field-input { font-size: 16px; } } /* no iOS zoom */
+}
+
+/* CodeMirror: colors come from the palette so it matches both themes */
+.cm-editor { height: 100%; background: hsl(var(--card)); color: hsl(var(--foreground)); font-size: 13px; }
+.cm-editor.cm-focused { outline: none; }
+.cm-scroller { font-family: "JetBrains Mono Variable", ui-monospace, monospace; line-height: 1.6; }
+.cm-gutters { background: hsl(var(--muted) / 0.5) !important; border-right: 1px solid hsl(var(--border)) !important; color: hsl(var(--muted-foreground)) !important; }
+.cm-activeLine { background: hsl(var(--accent) / 0.45) !important; }
+.cm-activeLineGutter { background: hsl(var(--accent)) !important; color: hsl(var(--foreground)) !important; }
+.cm-cursor { border-left-color: hsl(var(--primary)) !important; border-left-width: 2px !important; }
+.cm-selectionBackground, .cm-focused .cm-selectionBackground { background: hsl(var(--primary) / 0.18) !important; }
+.cm-matchingBracket { background: hsl(var(--primary) / 0.15) !important; outline: 1px solid hsl(var(--primary) / 0.4); }
+.cm-tooltip { background: hsl(var(--card)) !important; border: 1px solid hsl(var(--border)) !important; border-radius: 8px; box-shadow: 0 12px 40px -12px rgb(0 0 0 / .35); overflow: hidden; }
+.cm-tooltip-autocomplete ul li[aria-selected] { background: hsl(var(--primary) / 0.15) !important; color: hsl(var(--foreground)) !important; }
+.cm-panels { background: hsl(var(--muted)) !important; color: hsl(var(--foreground)) !important; }
+.cm-foldPlaceholder { background: hsl(var(--accent)) !important; border: 0 !important; }
+
+/* read-only code blocks (components/Code.tsx); outside @layer so Tailwind keeps
+   these runtime-built class names */
+  .syn-keyword { color: hsl(var(--syn-keyword)); font-weight: 500; }
+  .syn-string { color: hsl(var(--syn-string)); }
+  .syn-number { color: hsl(var(--syn-number)); }
+  .syn-comment { color: hsl(var(--syn-comment)); font-style: italic; }
+  .syn-fn { color: hsl(var(--syn-fn)); }
+  .syn-type { color: hsl(var(--syn-type)); }
+  .syn-prop { color: hsl(var(--syn-prop)); }
+  .syn-var { color: hsl(var(--syn-type)); }
+  .syn-flag { color: hsl(var(--syn-number)); }
+  .syn-punct { color: hsl(var(--muted-foreground)); }
