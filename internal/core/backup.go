@@ -25,11 +25,14 @@ import (
 // ---------------------------------------------------------------- config
 
 type BackupConfig struct {
-	Enabled       bool     `json:"enabled"`
-	ScheduleHours int      `json:"schedule_hours"` // run every N hours
-	KeepLast      int      `json:"keep_last"`      // per project
-	VerifyAfter   bool     `json:"verify_after"`   // restore-test each scheduled backup
-	S3            S3Config `json:"s3"`
+	Enabled       bool `json:"enabled"`
+	ScheduleHours int  `json:"schedule_hours"` // run every N hours
+	KeepLast      int  `json:"keep_last"`      // per project
+	// KeepLocal is how many bundles per project also stay on this machine once
+	// they are safely off-site. Ignored without S3 (then KeepLast applies locally).
+	KeepLocal   int      `json:"keep_local"`
+	VerifyAfter bool     `json:"verify_after"` // restore-test each scheduled backup
+	S3          S3Config `json:"s3"`
 }
 
 func (a *App) backupConfig() BackupConfig {
@@ -38,7 +41,37 @@ func (a *App) backupConfig() BackupConfig {
 	if c.KeepLast < 1 {
 		c.KeepLast = 1
 	}
+	if c.KeepLocal < 0 {
+		c.KeepLocal = 0
+	}
 	return c
+}
+
+// pruneLocalCopies deletes local bundle files that already sit off-site,
+// keeping only the newest cfg.KeepLocal per project. The S3 copy stays, and
+// fetchBundle downloads it again for a restore or verify.
+func (a *App) pruneLocalCopies(slug string, cfg BackupConfig) {
+	if !cfg.S3.configured() {
+		return
+	}
+	rows, err := a.Meta.Query(`SELECT id FROM backups WHERE project=$1 AND remote AND local ORDER BY created_at DESC OFFSET $2`, slug, cfg.KeepLocal)
+	if err != nil {
+		return
+	}
+	var ids []string
+	for rows.Next() {
+		var id string
+		rows.Scan(&id)
+		ids = append(ids, id)
+	}
+	rows.Close()
+	for _, id := range ids {
+		if err := os.Remove(a.backupFile(id)); err != nil && !os.IsNotExist(err) {
+			log.Printf("remove local backup %s: %v", id, err)
+			continue
+		}
+		a.Meta.Exec(`UPDATE backups SET local=false WHERE id=$1`, id)
+	}
 }
 
 type backupRunResult struct {
@@ -242,6 +275,11 @@ func (a *App) createBackupLocked(ctx context.Context, slug, kind string) (map[st
 		cancel()
 	}
 	a.pruneBackups(ctx, slug, cfg)
+	// scheduled runs verify right after this; drop the local copy after the
+	// verify so it doesn't have to download the bundle again
+	if !(kind == "scheduled" && cfg.VerifyAfter) {
+		a.pruneLocalCopies(slug, cfg)
+	}
 	a.writeCatalog(ctx)
 
 	out := map[string]any{"id": id, "project": slug, "kind": kind, "size_bytes": size, "sha256": sum,
@@ -625,7 +663,7 @@ func (a *App) verifyBackupLocked(ctx context.Context, id string) (map[string]any
 		return nil, err
 	}
 	defer sc.Exec(`DROP ROLE IF EXISTS ` + scratch)
-	if _, err := sc.Exec(`CREATE DATABASE ` + scratch + ` OWNER ` + scratch); err != nil {
+	if _, err := sc.Exec(`CREATE DATABASE ` + scratch + ` OWNER ` + scratch + ` STRATEGY FILE_COPY`); err != nil {
 		return nil, err
 	}
 	defer a.PG.dropDatabase(scratch)
@@ -772,7 +810,7 @@ func (a *App) restoreBackup(ctx context.Context, id, mode, target string) (map[s
 	if err != nil {
 		return nil, err
 	}
-	if _, err := sc.Exec(fmt.Sprintf(`CREATE DATABASE %s OWNER %s`, pq.QuoteIdentifier(side), pq.QuoteIdentifier(p.Role))); err != nil {
+	if _, err := sc.Exec(fmt.Sprintf(`CREATE DATABASE %s OWNER %s STRATEGY FILE_COPY`, pq.QuoteIdentifier(side), pq.QuoteIdentifier(p.Role))); err != nil {
 		return nil, err
 	}
 	warnings, err := a.pgRestore(ctx, dump, side, p.Role, true)
@@ -1054,6 +1092,7 @@ func (a *App) runScheduledBackups(ctx context.Context, cfg BackupConfig) backupR
 				res.OK = false
 				res.Errors = append(res.Errors, fmt.Sprintf("%s: verify failed: %v", s, v["detail"]))
 			}
+			a.pruneLocalCopies(s, cfg)
 		}
 	}
 	a.setSetting("backup_last_run", res)
@@ -1385,6 +1424,7 @@ func registerBackupOps(r *Registry) {
 			{Name: "enabled", Type: "boolean"},
 			{Name: "schedule_hours", Type: "integer", Desc: "run every N hours (1-168)"},
 			{Name: "keep_last", Type: "integer", Desc: "backups kept per project (1-365)"},
+			{Name: "keep_local", Type: "integer", Desc: "with an S3 target: how many of those also stay on this machine once uploaded (0-365, default 0)"},
 			{Name: "verify_after", Type: "boolean", Desc: "restore-test every scheduled backup"},
 			{Name: "s3_endpoint", Type: "string", Desc: "e.g. https://s3.eu-central-1.amazonaws.com or https://<account>.r2.cloudflarestorage.com; empty string disables off-site"},
 			{Name: "s3_region", Type: "string", Desc: "auto for R2, us-east-1 default"},
@@ -1402,6 +1442,9 @@ func registerBackupOps(r *Registry) {
 			}
 			if _, ok := a["keep_last"]; ok {
 				cfg.KeepLast = clamp(a.Int("keep_last", 7), 1, 365)
+			}
+			if _, ok := a["keep_local"]; ok {
+				cfg.KeepLocal = clamp(a.Int("keep_local", 0), 0, 365)
 			}
 			if _, ok := a["verify_after"]; ok {
 				cfg.VerifyAfter = a.Bool("verify_after", true)

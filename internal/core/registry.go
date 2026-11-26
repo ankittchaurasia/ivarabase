@@ -417,6 +417,7 @@ func NewRegistry(a *App) *Registry {
 	registerConfigOps(r)
 	registerRealtimeOps(r)
 	registerWebhookOps(r)
+	registerLogOps(r)
 	return r
 }
 

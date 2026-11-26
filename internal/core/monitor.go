@@ -114,7 +114,6 @@ func (a *App) monitorLoop(ctx context.Context) {
 		a.evaluateAlerts(ctx, ts)
 		if time.Since(s.lastClean) > time.Hour {
 			s.lastClean = time.Now()
-			a.Meta.Exec(`DELETE FROM metrics_samples WHERE ts < now() - interval '7 days'`)
 			a.Meta.Exec(`DELETE FROM alert_events WHERE at < now() - interval '90 days'`)
 		}
 	}

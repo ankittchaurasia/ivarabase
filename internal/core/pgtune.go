@@ -106,7 +106,8 @@ func pgTuning(cfg *Config) (map[string]string, int64, string) {
 		"min_wal_size":                 "80MB",
 		"checkpoint_completion_target": "0.9",
 		"random_page_cost":             "1.1",
-		"wal_compression":              "on",
+		"wal_compression":              "zstd", // smaller WAL than "on" (pglz) at the same or lower CPU cost
+		"default_toast_compression":    "lz4",  // faster and usually smaller than pglz for large text/jsonb values
 	}
 	if runtime.GOOS == "linux" {
 		out["effective_io_concurrency"] = "200" // needs posix_fadvise (not on macOS)

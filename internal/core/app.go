@@ -242,11 +242,7 @@ func (a *App) Background(ctx context.Context) {
 				return
 			case <-t.C:
 				a.Meta.Exec(`DELETE FROM sessions WHERE expires_at < now()`)
-				a.Meta.Exec(`DELETE FROM function_logs WHERE at < now() - interval '14 days'`)
-				a.Meta.Exec(`DELETE FROM audit WHERE at < now() - interval '180 days'`)
-				a.Meta.Exec(`DELETE FROM auth_mails WHERE at < now() - interval '30 days'`)
-				a.Meta.Exec(`DELETE FROM auth_sms WHERE at < now() - interval '30 days'`)
-				a.Meta.Exec(`DELETE FROM function_console WHERE at < now() - interval '7 days'`)
+				a.maintainLogPartitions() // log tables: drop expired daily partitions
 			}
 		}
 	}()
@@ -413,6 +409,7 @@ var metaMigrations = []string{
 		error text NOT NULL DEFAULT '',
 		message_id text NOT NULL DEFAULT '');
 	 CREATE INDEX auth_sms_p ON auth_sms(project, at DESC)`,
+	partitionLogsMigration(),
 }
 
 func (a *App) openMeta() error {
@@ -454,6 +451,7 @@ func (a *App) openMeta() error {
 			return err
 		}
 	}
+	a.maintainLogPartitions()
 	return nil
 }
 
@@ -554,7 +552,7 @@ func (a *App) createProjectDB(slug, name string, setupAPI ...bool) (string, erro
 	if _, err := c.Exec(fmt.Sprintf(`CREATE ROLE %s LOGIN PASSWORD %s NOSUPERUSER NOCREATEDB NOCREATEROLE CONNECTION LIMIT 60`, role, pq.QuoteLiteral(pw))); err != nil {
 		return "", err
 	}
-	if _, err := c.Exec(fmt.Sprintf(`CREATE DATABASE %s OWNER %s`, role, role)); err != nil {
+	if _, err := c.Exec(fmt.Sprintf(`CREATE DATABASE %s OWNER %s STRATEGY FILE_COPY`, role, role)); err != nil {
 		c.Exec(`DROP ROLE ` + role)
 		return "", err
 	}

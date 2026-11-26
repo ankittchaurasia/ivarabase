@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Changed
+- **Less disk use on the server.**
+  - Backups: new `keep_local` setting (default 0). With an S3 target, bundles are removed from local disk once uploaded (after the restore test for scheduled runs); `keep_last` still sets how many stay on S3, and restores and verifies download from S3 when needed.
+  - Log tables (`function_logs`, `function_console`, `audit`, `auth_mails`, `auth_sms`, `metrics_samples`) are partitioned by day. Expired days are dropped as whole partitions, so the space really goes back to the disk. Upgrading copies the rows still inside retention.
+  - Audit log retention defaults to 30 days (was 180) and can be changed with `GET`/`PUT /api/v1/system/audit-retention`. **Upgrading keeps only the last 30 days of audit history.**
+  - Postgres uses `wal_compression = zstd` and `default_toast_compression = lz4`.
+  - Project databases and restore scratch databases are created with `STRATEGY FILE_COPY`, so creating them no longer writes the whole database into the WAL.
+
 ## 0.2.0 - 2026-11-10
 
 First public release.
