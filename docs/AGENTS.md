@@ -40,7 +40,7 @@ claude mcp add --transport http ivarabase https://base.example.com/mcp --header 
 ```toml
 [mcp_servers.ivarabase]
 url = "https://base.example.com/mcp"
-bearer_token_env_var = "IVARABASE_TOKEN"   # export IVARABASE_TOKEN=ivb_...
+bearer_token_env_var = "IVARA_TOKEN"   # export IVARA_TOKEN=ivb_...
 ```
 
 If your Codex version doesn't support HTTP servers, use the stdio bridge instead:

@@ -227,6 +227,10 @@ export function Layout({ children }: { children: ReactNode }) {
   );
 
   if (isUnreachable(me.error)) return <ServerDown error={me.error} onRetry={me.refetch} retrying={me.isFetching} />;
+  // Draw nothing until we know there is a session: otherwise the dashboard
+  // flashes up before the first 401 sends the browser to /login. Pages are
+  // children, so their own queries don't start until this passes either.
+  if (me.isPending || me.error?.status === 401) return <div className="min-h-screen bg-background" />;
 
   return (
     <div className="flex min-h-full">

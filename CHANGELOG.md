@@ -2,8 +2,15 @@
 
 ## Unreleased
 
+## 0.2.2 - 2026-11-26
+
 ### Changed
+- **`IVARA_ADMIN_PASSWORD` is no longer first-start only.** Change it and restart, and that login gets the new password (everyone is signed out). The same value on every restart does nothing, so a password changed in the UI or with `ivarabase reset-password` stays until you change the variable. If `IVARA_ADMIN_USER` names a user that doesn't exist, it is created.
+- The Codex example in `docs/AGENTS.md` uses `IVARA_TOKEN`, like the other clients.
 - The Dokploy and Coolify compose files read `IVARA_DOMAIN` (and, for Dokploy, `IVARA_ADMIN_PASSWORD`), the same names as everywhere else, instead of `IVARABASE_DOMAIN` / `IVARABASE_ADMIN_PASSWORD`. Rename them in the platform's environment settings when you paste the new file.
+
+### Fixed
+- Opening the panel while signed out went to the login page straight away instead of flashing the dashboard first.
 
 ## 0.2.1 - 2026-11-26
 

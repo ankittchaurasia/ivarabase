@@ -149,6 +149,14 @@ func Open(dataDir string, opts InitOptions) (*App, *InitResult, error) {
 		}
 		res.Fresh = true
 		res.OwnerUser, res.OwnerPassword = user, pw
+		if opts.OwnerPassword != "" {
+			a.setSetting(envPasswordKey, hashPassword(opts.OwnerPassword))
+		}
+	} else if opts.OwnerPassword != "" {
+		if err := a.applyEnvPassword(opts.OwnerUser, opts.OwnerPassword); err != nil {
+			pg.Stop()
+			return nil, nil, err
+		}
 	}
 
 	a.Ops = NewRegistry(a)
@@ -615,6 +623,43 @@ func (a *App) ResetPassword(user, pw string) (string, error) {
 	}
 	a.Meta.Exec(`DELETE FROM sessions`)
 	return pw, nil
+}
+
+// envPasswordKey holds a salted hash of the last IVARA_ADMIN_PASSWORD that
+// was applied, so a restart only touches the login when that value changes.
+const envPasswordKey = "admin_env_password"
+
+// applyEnvPassword makes a changed IVARA_ADMIN_PASSWORD take effect on an
+// existing install. The same value as last time does nothing, so a password
+// changed in the UI or with `ivarabase reset-password` stays until the
+// environment variable itself is changed. A user that doesn't exist yet is
+// created.
+func (a *App) applyEnvPassword(user, pw string) error {
+	if user == "" {
+		user = "admin"
+	}
+	var last string
+	a.getSetting(envPasswordKey, &last)
+	if last != "" && checkPassword(last, pw) {
+		return nil
+	}
+	res, err := a.Meta.Exec(`UPDATE users SET password_hash=$2 WHERE username=$1`, user, hashPassword(pw))
+	if err != nil {
+		return err
+	}
+	action := "updated"
+	if n, _ := res.RowsAffected(); n == 0 {
+		if _, err := a.Meta.Exec(`INSERT INTO users(username, password_hash) VALUES ($1,$2)`, user, hashPassword(pw)); err != nil {
+			return err
+		}
+		action = "created"
+	}
+	// signed-in browsers keep working only with the new password
+	a.Meta.Exec(`DELETE FROM sessions`)
+	a.Meta.Exec(`INSERT INTO audit(actor,op,detail,ok) VALUES ('system','account.env_password',$1,true)`,
+		fmt.Sprintf(`{"user":%q,"action":%q}`, user, action))
+	log.Printf("IVARA_ADMIN_PASSWORD changed: password for %q %s, sessions signed out", user, action)
+	return a.setSetting(envPasswordKey, hashPassword(pw))
 }
 
 // SetBackupTarget stores an S3 target (used by disaster recovery).

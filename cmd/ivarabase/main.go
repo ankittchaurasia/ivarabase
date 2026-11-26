@@ -179,8 +179,9 @@ func cmdServe(args []string) error {
 	listen := fs.String("listen", "", "HTTP listen address (default 127.0.0.1:8787)")
 	public := fs.String("public-url", "", "public base URL")
 	fs.Parse(args)
-	// first start only: IVARA_ADMIN_USER / IVARA_ADMIN_PASSWORD set the owner
-	// login (for hosts where running a command in the container is awkward)
+	// IVARA_ADMIN_USER / IVARA_ADMIN_PASSWORD set the owner login on first start,
+	// and a changed IVARA_ADMIN_PASSWORD is applied again on a later start
+	// (for hosts where running a command in the container is awkward)
 	user := os.Getenv("IVARA_ADMIN_USER")
 	if user == "" {
 		user = "admin"
