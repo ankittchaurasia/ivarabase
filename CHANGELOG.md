@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 0.2.1 - 2026-11-26
+
 ### Changed
 - **Less disk use on the server.**
   - Backups: new `keep_local` setting (default 0). With an S3 target, bundles are removed from local disk once uploaded (after the restore test for scheduled runs); `keep_last` still sets how many stay on S3, and restores and verifies download from S3 when needed.
