@@ -180,25 +180,12 @@ func cmdServe(args []string) error {
 	public := fs.String("public-url", "", "public base URL")
 	fs.Parse(args)
 	// IVARA_ADMIN_USER / IVARA_ADMIN_PASSWORD set the owner login on first start,
-	// and a changed IVARA_ADMIN_PASSWORD is applied again on a later start
-	// (for hosts where running a command in the container is awkward)
-	user := os.Getenv("IVARA_ADMIN_USER")
-	if user == "" {
-		user = "admin"
-	}
-	pw := os.Getenv("IVARA_ADMIN_PASSWORD")
-	if pw == "" {
-		pw = os.Getenv("IVARA_OWNER_PASSWORD")
-	}
-	if pw != "" && len(pw) < 10 {
-		return errors.New("IVARA_ADMIN_PASSWORD must be at least 10 characters")
-	}
-	a, res, err := core.Open(*data, core.InitOptions{Listen: *listen, PublicURL: *public, OwnerUser: user, OwnerPassword: pw})
+	// and a changed value is applied again on a later start (for hosts where
+	// running a command in the container is awkward). Open reads them after
+	// <data>/ivarabase.env is loaded, so they work from that file too.
+	a, res, err := core.Open(*data, core.InitOptions{Listen: *listen, PublicURL: *public, AdminFromEnv: true})
 	if err != nil {
 		return err
-	}
-	if res != nil && pw != "" && res.OwnerPassword == pw {
-		res.OwnerPassword = "(the IVARA_ADMIN_PASSWORD you set)"
 	}
 	a.PG.Owned = true // the server owns the cluster's lifecycle
 	defer a.Close()

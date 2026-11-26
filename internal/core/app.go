@@ -57,6 +57,21 @@ func Open(dataDir string, opts InitOptions) (*App, *InitResult, error) {
 	if err := cfg.ensureDirs(); err != nil {
 		return nil, nil, err
 	}
+	if opts.AdminFromEnv {
+		// LoadConfig has loaded <data>/ivarabase.env into the environment by now
+		if opts.OwnerUser == "" {
+			opts.OwnerUser = strings.TrimSpace(os.Getenv("IVARA_ADMIN_USER"))
+		}
+		if opts.OwnerPassword == "" {
+			opts.OwnerPassword = os.Getenv("IVARA_ADMIN_PASSWORD")
+			if opts.OwnerPassword == "" {
+				opts.OwnerPassword = os.Getenv("IVARA_OWNER_PASSWORD")
+			}
+		}
+		if opts.OwnerPassword != "" && len(opts.OwnerPassword) < 10 {
+			return nil, nil, errors.New("IVARA_ADMIN_PASSWORD must be at least 10 characters")
+		}
+	}
 	res := &InitResult{}
 
 	// master key: encrypts secrets at rest in the meta store
@@ -149,11 +164,14 @@ func Open(dataDir string, opts InitOptions) (*App, *InitResult, error) {
 		}
 		res.Fresh = true
 		res.OwnerUser, res.OwnerPassword = user, pw
+		if opts.AdminFromEnv && opts.OwnerPassword != "" {
+			res.OwnerPassword = "(the IVARA_ADMIN_PASSWORD you set)"
+		}
 		if opts.OwnerPassword != "" {
-			a.setSetting(envPasswordKey, hashPassword(opts.OwnerPassword))
+			a.setSetting(envLoginKey, envLogin{User: user, Hash: hashPassword(opts.OwnerPassword)})
 		}
 	} else if opts.OwnerPassword != "" {
-		if err := a.applyEnvPassword(opts.OwnerUser, opts.OwnerPassword); err != nil {
+		if err := a.applyEnvLogin(opts.OwnerUser, opts.OwnerPassword); err != nil {
 			pg.Stop()
 			return nil, nil, err
 		}
@@ -188,6 +206,10 @@ type InitOptions struct {
 	OwnerUser     string
 	OwnerPassword string
 	RecoveryKey   string // adopt an existing key (disaster recovery)
+	// AdminFromEnv (serve) fills OwnerUser / OwnerPassword from
+	// IVARA_ADMIN_USER / IVARA_ADMIN_PASSWORD, read after <data>/ivarabase.env
+	// is loaded, and applies a changed value to an existing install.
+	AdminFromEnv bool
 }
 
 func (a *App) Close() {
@@ -625,41 +647,79 @@ func (a *App) ResetPassword(user, pw string) (string, error) {
 	return pw, nil
 }
 
-// envPasswordKey holds a salted hash of the last IVARA_ADMIN_PASSWORD that
-// was applied, so a restart only touches the login when that value changes.
-const envPasswordKey = "admin_env_password"
+// envLoginKey remembers the IVARA_ADMIN_USER / IVARA_ADMIN_PASSWORD pair that
+// was last applied (the password as a salted hash), so a restart only touches
+// the login when one of them changes. envPasswordKey is the 0.2.2 form, which
+// stored only the password hash.
+const (
+	envLoginKey    = "admin_env_login"
+	envPasswordKey = "admin_env_password"
+)
 
-// applyEnvPassword makes a changed IVARA_ADMIN_PASSWORD take effect on an
-// existing install. The same value as last time does nothing, so a password
-// changed in the UI or with `ivarabase reset-password` stays until the
-// environment variable itself is changed. A user that doesn't exist yet is
-// created.
-func (a *App) applyEnvPassword(user, pw string) error {
+type envLogin struct {
+	User string `json:"user"`
+	Hash string `json:"hash"`
+}
+
+func (a *App) userExists(name string) bool {
+	var n int
+	a.Meta.QueryRow(`SELECT count(*) FROM users WHERE username=$1`, name).Scan(&n)
+	return n > 0
+}
+
+// applyEnvLogin makes a changed IVARA_ADMIN_USER or IVARA_ADMIN_PASSWORD take
+// effect on an existing install. The same pair as last time does nothing, so a
+// password changed in the UI or with `ivarabase reset-password` stays until an
+// environment variable itself changes.
+//
+// A new IVARA_ADMIN_USER renames the login the environment set last time (when
+// the new name isn't taken), so changing the name doesn't leave the old one
+// behind. A name that isn't there yet is otherwise created.
+func (a *App) applyEnvLogin(user, pw string) error {
 	if user == "" {
 		user = "admin"
 	}
-	var last string
-	a.getSetting(envPasswordKey, &last)
-	if last != "" && checkPassword(last, pw) {
-		return nil
+	var last envLogin
+	have := a.getSetting(envLoginKey, &last) && last.Hash != ""
+	if !have {
+		var legacy string
+		if a.getSetting(envPasswordKey, &legacy) && legacy != "" {
+			// 0.2.2 stored only the password; it was applied to the default user
+			last, have = envLogin{User: "admin", Hash: legacy}, true
+		}
+	}
+	if have && last.User == user && checkPassword(last.Hash, pw) {
+		if !a.userExists(user) { // deleted by hand since: put it back
+			have = false
+		} else {
+			a.setSetting(envLoginKey, last)
+			return nil
+		}
+	}
+
+	action := "password updated"
+	if have && last.User != user && a.userExists(last.User) && !a.userExists(user) {
+		if _, err := a.Meta.Exec(`UPDATE users SET username=$1 WHERE username=$2`, user, last.User); err != nil {
+			return err
+		}
+		action = fmt.Sprintf("renamed from %q", last.User)
 	}
 	res, err := a.Meta.Exec(`UPDATE users SET password_hash=$2 WHERE username=$1`, user, hashPassword(pw))
 	if err != nil {
 		return err
 	}
-	action := "updated"
 	if n, _ := res.RowsAffected(); n == 0 {
 		if _, err := a.Meta.Exec(`INSERT INTO users(username, password_hash) VALUES ($1,$2)`, user, hashPassword(pw)); err != nil {
 			return err
 		}
 		action = "created"
 	}
-	// signed-in browsers keep working only with the new password
+	// signed-in browsers keep working only with the new login
 	a.Meta.Exec(`DELETE FROM sessions`)
-	a.Meta.Exec(`INSERT INTO audit(actor,op,detail,ok) VALUES ('system','account.env_password',$1,true)`,
-		fmt.Sprintf(`{"user":%q,"action":%q}`, user, action))
-	log.Printf("IVARA_ADMIN_PASSWORD changed: password for %q %s, sessions signed out", user, action)
-	return a.setSetting(envPasswordKey, hashPassword(pw))
+	detail, _ := json.Marshal(map[string]string{"user": user, "action": action})
+	a.Meta.Exec(`INSERT INTO audit(actor,op,detail,ok) VALUES ('system','account.env_login',$1,true)`, string(detail))
+	log.Printf("IVARA_ADMIN_USER/IVARA_ADMIN_PASSWORD changed: login %q %s, sessions signed out", user, action)
+	return a.setSetting(envLoginKey, envLogin{User: user, Hash: hashPassword(pw)})
 }
 
 // SetBackupTarget stores an S3 target (used by disaster recovery).

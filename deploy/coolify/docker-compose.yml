@@ -6,6 +6,7 @@
 services:
   ivarabase:
     image: ghcr.io/ankittchaurasia/ivarabase:0.2-pg18
+    pull_policy: always # pick up new 0.2.x releases on redeploy
     restart: unless-stopped
     environment:
       - IVARA_DOMAIN=${IVARA_DOMAIN:?set IVARA_DOMAIN, e.g. base.example.com}

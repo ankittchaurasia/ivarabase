@@ -13,7 +13,7 @@ services:
     restart: unless-stopped
     environment:
       IVARA_DOMAIN: base.example.com # panel at https://base.example.com, projects at https://<name>.base.example.com
-      # IVARA_ADMIN_PASSWORD: ...    # first start only; otherwise read INITIAL_CREDENTIALS.txt
+      # IVARA_ADMIN_PASSWORD: ...    # 10+ characters; a changed value is applied on the next start. Unset: see INITIAL_CREDENTIALS.txt
       # Postgres TLS with the proxy's real certificate (verify-full); mount it below.
       # IVARA_TLS_CERT_FILE: /certs/fullchain.pem
       # IVARA_TLS_KEY_FILE: /certs/privkey.pem

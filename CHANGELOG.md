@@ -2,6 +2,17 @@
 
 ## Unreleased
 
+## 0.2.3 - 2026-11-27
+
+### Changed
+- **Changing `IVARA_ADMIN_USER` now takes effect on its own.** On the next start the login the environment set last time is renamed (and keeps working with `IVARA_ADMIN_PASSWORD`); before, a new user name was only noticed when the password changed too. Upgrading from 0.2.2 with the same values changes nothing and keeps everyone signed in.
+- The Dokploy compose file stops with a clear message when `IVARA_ADMIN_PASSWORD` is missing, instead of starting with a random password, and both platform files use `pull_policy: always` so a redeploy picks up new 0.2.x images.
+- Every version tag now also publishes a GitHub release with Linux and macOS binaries, `SHA256SUMS` and the notes from this file.
+
+### Fixed
+- `IVARA_ADMIN_USER` / `IVARA_ADMIN_PASSWORD` in `<data>/ivarabase.env` were ignored: the server read them before loading that file.
+- `docs/CONFIGURATION.md` still said these variables apply on the first start only.
+
 ## 0.2.2 - 2026-11-26
 
 ### Changed

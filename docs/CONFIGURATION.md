@@ -22,7 +22,7 @@ The data directory is `~/.ivarabase` by default (`/var/lib/ivarabase` for `servi
 | `IVARA_TLS_CERT_FILE`, `IVARA_TLS_KEY_FILE` | `tls.cert_file`, `tls.key_file` | certificate files. In `proxy` mode they're used for Postgres TLS only |
 | `IVARA_TRUSTED_PROXIES` | `trusted_proxies` | comma-separated IPs/CIDRs allowed to set `X-Forwarded-For`. Default: loopback (Docker: loopback + private ranges) |
 | `IVARA_DENO_PATH`, `IVARA_POSTGREST_PATH` | `deno_path`, `postgrest_path` | found on `PATH` when unset |
-| `IVARA_ADMIN_USER`, `IVARA_ADMIN_PASSWORD` | none | the owner login on the **first** start only (at least 10 characters) |
+| `IVARA_ADMIN_USER`, `IVARA_ADMIN_PASSWORD` | none | the owner login (password at least 10 characters). Set on first start; change either one later and the next start applies it: a new password replaces the old one, a new user name renames that login, and everyone is signed out. The same values on every start change nothing, so a password changed in the UI stays. Read from the environment or `<data>/ivarabase.env` |
 | `IVARA_WEBHOOKS_ALLOW_PRIVATE` | `webhooks_allow_private_targets` | `1` lets database webhooks call private and loopback addresses ([WEBHOOKS.md](WEBHOOKS.md#safety)) |
 
 `ivarabase config set KEY VALUE` changes `config.json`, for example `ivarabase config set tls.mode proxy`.

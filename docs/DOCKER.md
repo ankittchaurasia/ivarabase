@@ -109,7 +109,7 @@ Any `IVARA_*` variable overrides `config.json` without being saved to it, so the
 |---|---|---|
 | `IVARA_DOMAIN` | none | panel domain; projects at `<project>.<domain>` |
 | `IVARA_PUBLIC_URL` | `https://<domain>` | override when the proxy uses another port or a path |
-| `IVARA_ADMIN_USER` / `IVARA_ADMIN_PASSWORD` | `admin` / random | set on first start; changing `IVARA_ADMIN_PASSWORD` later resets that login on the next restart (and signs everyone out) |
+| `IVARA_ADMIN_USER` / `IVARA_ADMIN_PASSWORD` | `admin` / random | set on first start; change either later and the next start applies it (renames the user / replaces the password, signs everyone out). Avoid `$` in the password: Compose reads it as a variable |
 | `IVARA_TLS_CERT_FILE` / `IVARA_TLS_KEY_FILE` | none | the proxy's certificate, for Postgres verify-full |
 | `IVARA_TRUSTED_PROXIES` | loopback + private ranges | who may set `X-Forwarded-For` |
 | `IVARA_PG_SHARED_BUFFERS`, `IVARA_PG_WORK_MEM`, … | scaled to the container's memory | see [CONFIGURATION.md](CONFIGURATION.md) |
