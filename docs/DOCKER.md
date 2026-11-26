@@ -86,7 +86,7 @@ The container copies the files into the volume when it starts and again every ho
 Any Docker host works the same way: the image, a volume on `/data`, port 8787 behind HTTPS.
 
 - **Portainer and similar:** add a stack with the compose file above.
-- **Coolify / Dokploy:** ready-made compose files with Traefik labels are in [`deploy/`](../deploy). Set `IVARABASE_DOMAIN` and an admin password, and the platform's Traefik handles HTTPS. Project subdomains need a wildcard certificate, which Let's Encrypt only issues through a DNS challenge; configure one for your DNS provider in the platform's Traefik settings, or use the `/proj/<project>` URLs.
+- **Coolify / Dokploy:** ready-made compose files with Traefik labels are in [`deploy/`](../deploy). Set `IVARA_DOMAIN` and an admin password, and the platform's Traefik handles HTTPS. Project subdomains need a wildcard certificate, which Let's Encrypt only issues through a DNS challenge; configure one for your DNS provider in the platform's Traefik settings, or use the `/proj/<project>` URLs. Behind Cloudflare's proxy you don't need the DNS challenge: Cloudflare's certificate covers `*.<domain>`, so remove the `tls.certresolver` and `tls.domains` labels and, for Full (strict), add a Cloudflare origin certificate to the platform's Traefik.
 
 ## Running commands
 

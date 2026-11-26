@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+### Changed
+- The Dokploy and Coolify compose files read `IVARA_DOMAIN` (and, for Dokploy, `IVARA_ADMIN_PASSWORD`), the same names as everywhere else, instead of `IVARABASE_DOMAIN` / `IVARABASE_ADMIN_PASSWORD`. Rename them in the platform's environment settings when you paste the new file.
+
 ## 0.2.1 - 2026-11-26
 
 ### Changed

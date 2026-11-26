@@ -1,5 +1,5 @@
-# Coolify: New Resource > Docker Compose Empty, paste this file, then set the
-# domain variables. Coolify's Traefik ends HTTPS and routes the panel domain
+# Coolify: New Resource > Docker Compose Empty, paste this file, then set IVARA_DOMAIN
+# under Environment Variables. Coolify's Traefik ends HTTPS and routes the panel domain
 # and the wildcard for project subdomains to port 8787.
 # A wildcard (*.SERVICE_DOMAIN) needs a wildcard certificate: configure
 # Traefik's DNS challenge in Coolify (Servers > Proxy) - see docs/DOCKER.md.
@@ -8,7 +8,7 @@ services:
     image: ghcr.io/ankittchaurasia/ivarabase:0.2-pg18
     restart: unless-stopped
     environment:
-      - IVARA_DOMAIN=${IVARABASE_DOMAIN:?set IVARABASE_DOMAIN, e.g. base.example.com}
+      - IVARA_DOMAIN=${IVARA_DOMAIN:?set IVARA_DOMAIN, e.g. base.example.com}
       - IVARA_ADMIN_PASSWORD=${SERVICE_PASSWORD_IVARABASE}
     volumes:
       - ivarabase-data:/data
@@ -16,12 +16,12 @@ services:
     stop_grace_period: 60s
     labels:
       - traefik.enable=true
-      - traefik.http.routers.ivarabase.rule=Host(`${IVARABASE_DOMAIN}`) || HostRegexp(`^[a-z0-9_-]+\.${IVARABASE_DOMAIN}$`)
+      - traefik.http.routers.ivarabase.rule=Host(`${IVARA_DOMAIN}`) || HostRegexp(`^[a-z0-9_-]+\.${IVARA_DOMAIN}$`)
       - traefik.http.routers.ivarabase.entrypoints=https
       - traefik.http.routers.ivarabase.tls=true
       - traefik.http.routers.ivarabase.tls.certresolver=letsencrypt
-      - traefik.http.routers.ivarabase.tls.domains[0].main=${IVARABASE_DOMAIN}
-      - traefik.http.routers.ivarabase.tls.domains[0].sans=*.${IVARABASE_DOMAIN}
+      - traefik.http.routers.ivarabase.tls.domains[0].main=${IVARA_DOMAIN}
+      - traefik.http.routers.ivarabase.tls.domains[0].sans=*.${IVARA_DOMAIN}
       - traefik.http.services.ivarabase.loadbalancer.server.port=8787
 volumes:
   ivarabase-data:
